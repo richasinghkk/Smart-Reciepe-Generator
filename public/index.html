@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Smart Recipe Generator</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+
+<style>
+  /* ===== Base Styles ===== */
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #ffecd2, #fcb69f);
+    margin: 0; padding: 0; color: #333;
+    overflow-x: hidden;
+    transition: background 0.5s ease, color 0.3s ease;
+  }
+
+  /* ===== Heading ===== */
+  .heading {
+    font-size: 3rem;
+    font-weight: 800;
+    text-align: center;
+    margin: 30px 0;
+    background: linear-gradient(90deg,#ff4b2b,#ff6a3d,#ffcb6b,#ff4b2b);
+    background-size: 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientMove 5s ease infinite, bounceHeading 2s ease infinite;
+    letter-spacing: 1px;
+  }
+  @keyframes gradientMove {
+    0%{background-position:0%}
+    50%{background-position:100%}
+    100%{background-position:0%}
+  }
+  @keyframes bounceHeading {
+    0%,100%{transform: translateY(0)}
+    50%{transform: translateY(-10px)}
+  }
+
+  /* ===== Controls ===== */
+  .controls {
+    background: #fff;
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 750px;
+    border-radius: 18px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+    position: relative; z-index: 1;
+  }
+  .controls:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.15); }
+  .controls h3 { margin: 0 0 8px 0; font-weight: 600; color: #444; }
+  .allrt { font-size: 0.9rem; color: #888; }
+  input, select { padding: 12px; border-radius: 10px; border: 1px solid #ddd; font-size: 1rem; margin-top: 8px; outline: none; transition: border 0.2s ease, box-shadow 0.2s ease; }
+  input:focus, select:focus { border: 1px solid #ff6a3d; box-shadow: 0 0 8px rgba(255,106,61,0.4); }
+  button {
+    background: linear-gradient(135deg, #ff6a3d, #ff4b2b);
+    color: #fff;
+    font-weight: bold;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: 0.3s;
+    margin-top: 12px;
+  }
+  button:hover { transform: scale(1.1) rotate(-1deg); box-shadow: 0 8px 25px rgba(255,75,43,0.5); }
+
+  /* ===== Recipe Cards ===== */
+  .recipe-card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 750px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+    opacity:0;
+    transform: translateY(30px);
+    animation: fadeInUp 0.6s forwards;
+    animation-delay: var(--delay);
+    position: relative; z-index: 1;
+  }
+  .recipe-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 15px 35px rgba(0,0,0,0.18); }
+  .recipe-card h3 { margin-top: 0; color: #ff4b2b; font-size: 1.6rem; }
+  .recipe-card img { width: 100%; border-radius: 14px; margin-bottom: 12px; transition: transform 0.3s ease; }
+  .recipe-card img:hover { transform: scale(1.08) rotate(1deg); }
+  .muted { color: #666; font-size: 0.9rem; }
+  h2 { text-align: center; margin-top: 35px; color: #333; font-size: 1.8rem; }
+
+  @keyframes fadeInUp { 0%{opacity:0; transform: translateY(30px)} 100%{opacity:1; transform: translateY(0)} }
+
+  /* ===== Dark Mode ===== */
+  body.dark { background: linear-gradient(135deg, #232526, #414345); color: #f1f1f1; }
+  body.dark .controls, body.dark .recipe-card { background: #2b2b2b; color: #f1f1f1; box-shadow: 0 8px 25px rgba(0,0,0,0.6); }
+  body.dark h2, body.dark .heading { color: #fff; }
+
+  .dark-toggle { position: fixed; top: 15px; right: 15px; background: #333; color: #fff; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; }
+  .dark-toggle:hover { background: #555; }
+
+  /* ===== Floating Food Emojis ===== */
+  .floating-icons { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; overflow:hidden; z-index:0; font-size:2rem; }
+  .floating-icons span {
+    position: absolute;
+    animation: float 10s linear infinite;
+  }
+  @keyframes float {
+    0% { transform: translateY(100vh) translateX(0) rotate(0deg); opacity:0; }
+    10% { opacity:0.3; }
+    50% { opacity:0.7; }
+    100% { transform: translateY(-10vh) translateX(50vw) rotate(360deg); opacity:0; }
+  }
+</style>
+</head>
+
+<body>
+<div class="floating-icons" id="floatingIcons"></div>
+
+
+
+<h1 class="heading"> Smart Recipe Generator</h1>
+
+<div class="controls upload">
+  <h3>Upload an Image of Ingredients</h3>
+  <p class="allrt">📸 Don’t upload handwritten text</p>
+  <input type="file" id="fileInput" accept="image/*" />
+  <button onclick="uploadImage()">Upload & Analyze</button>
+</div>
+
+<div class="controls">
+  <h3>Enter ingredients (comma-separated):</h3>
+  <input type="text" id="ingredientInput" placeholder="e.g., tomato, rice, onion" style="width:300px" />
+  <button id="searchBtn">Find Recipes</button>
+</div>
+
+<div class="controls" style="overflow: hidden;">
+  <label style="padding-right: 15px;">Sort by:
+    <select id="sortOption">
+      <option value="">None</option>
+      <option value="timeAsc">Cooking Time ↑</option>
+      <option value="timeDesc">Cooking Time ↓</option>
+      <option value="difficulty">Difficulty</option>
+    </select>
+  </label>
+
+  <label style="padding-right: 15px;">Dietary:
+    <select id="dietFilter">
+      <option value="">All</option>
+      <option value="vegetarian">Vegetarian</option>
+      <option value="non-vegetarian">Non-Vegetarian</option>
+      <option value="vegan">Vegan</option>
+    </select>
+  </label>
+
+  <button id="applyFilter">Apply</button>
+</div>
+
+<h2>🍲 Suggested Recipes:</h2>
+<div id="recipes"></div>
+
+<script>
+let lastResults = [];
+
+// ===== Dark Mode Toggle =====
+function toggleDark() { document.body.classList.toggle("dark"); }
+
+// ===== Floating Food Emojis =====
+const icons = ['🍅','🥕','🥦','🍗','🍳','🥔','🧄','🍕','🥗','🌽','🍉','🍌'];
+const container = document.getElementById('floatingIcons');
+for(let i=0;i<20;i++){
+  const span = document.createElement('span');
+  span.innerText = icons[Math.floor(Math.random()*icons.length)];
+  span.style.left = Math.random()*100 + 'vw';
+  span.style.fontSize = (24+Math.random()*18)+'px';
+  span.style.animationDuration = (8+Math.random()*7)+'s';
+  span.style.animationDelay = Math.random()*5+'s';
+  container.appendChild(span);
+}
+
+// ===== Render Recipes =====
+function renderRecipes(recipes){
+  const recipesDiv = document.getElementById("recipes");
+  recipesDiv.innerHTML = "";
+  if(!recipes || recipes.length===0){
+    recipesDiv.innerHTML="<p style='text-align:center;'>No matching recipes found.</p>";
+    return;
+  }
+  recipes.forEach((r,i)=>{
+    const card=document.createElement("div");
+    card.className="recipe-card";
+    card.style.setProperty('--delay',`${i*0.1}s`);
+    card.innerHTML=`
+      <img src="https://source.unsplash.com/400x300/?${r.name}" alt="${r.name}">
+      <h3>${r.name}</h3>
+      <p><b>Ingredients:</b> ${r.ingredients.join(", ")}</p>
+      <p><b>Steps:</b></p>
+      <ul>${r.steps.map(s=>`<li>${s}</li>`).join("")}</ul>
+      <p><b>Nutrition:</b> ${r.nutrition.calories} cal, ${r.nutrition.protein}g protein</p>
+      <p class="muted">🕒 ${r.cookingTime} mins | ⚡ ${r.difficulty} | 🥗 ${r.dietary}</p>
+    `;
+    recipesDiv.appendChild(card);
+  });
+}
+
+// ===== Manual Search =====
+document.getElementById("searchBtn").addEventListener("click", async () => {
+  const input = document.getElementById("ingredientInput").value;
+  if (!input.trim()) return alert("Enter some ingredients first!");
+  const ingredients = input.split(",").map(i => i.trim());
+
+  const res = await fetch("/search", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ingredients })
+  });
+  const data = await res.json();
+  lastResults = data.recipes || [];
+  renderRecipes(lastResults);
+});
+
+// ===== Filter & Sort =====
+document.getElementById("applyFilter").addEventListener("click", () => {
+  let results = [...lastResults];
+  const sortOption = document.getElementById("sortOption").value;
+  const dietFilter = document.getElementById("dietFilter").value;
+
+  if(dietFilter) results = results.filter(r=>r.dietary.toLowerCase()===dietFilter);
+  if(sortOption==="timeAsc") results.sort((a,b)=>a.cookingTime-b.cookingTime);
+  if(sortOption==="timeDesc") results.sort((a,b)=>b.cookingTime-a.cookingTime);
+  if(sortOption==="difficulty"){
+    const order={easy:1,medium:2,hard:3};
+    results.sort((a,b)=>order[a.difficulty]-order[b.difficulty]);
+  }
+
+  renderRecipes(results);
+});
+
+// ===== Upload Image =====
+async function uploadImage(){
+  const fileInput=document.getElementById("fileInput");
+  const file=fileInput.files[0];
+  if(!file) return alert("Please select a file first!");
+  try{
+    const formData=new FormData();
+    formData.append("image",file);
+    const response=await fetch("/analyze",{method:"POST",body:formData});
+    const data=await response.json();
+    lastResults=data.recipes||[];
+    renderRecipes(lastResults);
+  }catch(err){
+    console.error(err); alert("Error analyzing image");
+  }
+}
+</script>
+</body>
+</html>
