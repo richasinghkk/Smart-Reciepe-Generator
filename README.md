@@ -24,6 +24,10 @@ Suggests matching recipes from a local database based on ingredients you provide
    ```
    Visit: http://localhost:3000
 
+4. **Live Demo**
+[Click here to view the hosted app](https://smart-reciepe-generator.onrender.com/)
+
+
 ## API
 - `POST /search` with JSON body `{ "ingredients": ["ingredient1", "ingredient2", ...] }` → returns ranked recipes.
 
